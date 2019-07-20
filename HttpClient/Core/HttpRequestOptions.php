@@ -6,7 +6,7 @@ namespace HttpClient\Core;
 
 use HttpClient\Interfaces\HttpDataInterface;
 
-class RequestOptions
+class HttpRequestOptions
 {
     private $body;
     private $headers = [];
@@ -24,7 +24,7 @@ class RequestOptions
 
     /**
      * @param HttpDataInterface $body
-     * @return RequestOptions
+     * @return HttpRequestOptions
      */
     public function setBody(HttpDataInterface $body)
     {
@@ -42,9 +42,9 @@ class RequestOptions
 
     /**
      * @param array $headers
-     * @return RequestOptions
+     * @return HttpRequestOptions
      */
-    public function setHeaders(array $headers): RequestOptions
+    public function setHeaders(array $headers): HttpRequestOptions
     {
         $this->headers = $headers;
         return $this;
@@ -60,9 +60,9 @@ class RequestOptions
 
     /**
      * @param array $cookies
-     * @return RequestOptions
+     * @return HttpRequestOptions
      */
-    public function setCookies(array $cookies): RequestOptions
+    public function setCookies(array $cookies): HttpRequestOptions
     {
         $this->cookies = $cookies;
         return $this;
@@ -78,7 +78,7 @@ class RequestOptions
 
     /**
      * @param bool $allowRedirection
-     * @return RequestOptions
+     * @return HttpRequestOptions
      */
     public function setAllowRedirection($allowRedirection)
     {
@@ -96,7 +96,7 @@ class RequestOptions
 
     /**
      * @param int $maxRedirection
-     * @return RequestOptions
+     * @return HttpRequestOptions
      */
     public function setMaxRedirection($maxRedirection)
     {

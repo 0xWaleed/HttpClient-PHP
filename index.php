@@ -1,7 +1,7 @@
 <?php
 
 use HttpClient\Core\HttpClientConfiguration;
-use HttpClient\Core\RequestOptions;
+use HttpClient\Core\HttpRequestOptions;
 use HttpClient\HttpClient;
 use \HttpClient\Models\{
   HttpMultipartCell,
@@ -33,15 +33,37 @@ spl_autoload_register(function ($class) use ($allFiles){
 //endregion
 
 
-$auth = '06b4331d-84f1-4842-b150-7b1e45a9d36b';
-$url = 'https://vl.api.np.km.playstation.net/vl/api/v1/mobile/users/me/info';
+class MyClassThatCanBeForwarded implements \HttpClient\Interfaces\HttpForwardInterface
+{
+    public function getHeaders(): array
+    {
+        return getallheaders();
+    }
 
-HttpClient::authorization('Bearer', $auth);
+    public function getCookies(): array
+    {
+        return $_COOKIE;
+    }
 
-$res = HttpClient::get($url);
-$headers = $res->headers()[0]['Content-Type'];
+    public function getUrl(): string
+    {
+        return 'http://httpbin.org/anything';
+    }
 
-header("Content-Type: {$headers}");
+    public function getBody(): \HttpClient\Interfaces\HttpDataInterface
+    {
+        return new \HttpClient\Models\HttpPlainText(file_get_contents('php://input'));
+    }
+
+    public function getMethod(): string
+    {
+        return $_SERVER['REQUEST_METHOD'];
+    }
+}
+
+
+$myClass = new MyClassThatCanBeForwarded();
+
+$res = HttpClient::requestFromClass($myClass);
 
 die(($res->body));
-

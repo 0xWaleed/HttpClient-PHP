@@ -4,7 +4,7 @@
 namespace HttpClient\Core;
 
 
-class Response
+class HttpResponse
 {
     public $body;
     public $headers;
@@ -43,7 +43,13 @@ class Response
             {
                 if ($i === 0)
                 {
-                    $allParsedHeader['Status'] = $explodedHeaderNode[$i];
+                    $statusLine = $explodedHeaderNode[$i];
+                    $explodedStatusLine = explode(' ', $statusLine);
+                    $allParsedHeader = [
+                        'HttpVersion' => $explodedStatusLine[0],
+                        'StatusCode' => $explodedStatusLine[1],
+                        'StatusText' => $explodedStatusLine[2]
+                    ];
                     continue;
                 }
 
@@ -57,5 +63,12 @@ class Response
         }
         $this->cacheHeaders = $headersMD5toCache;
         return $allHeaders;
+    }
+
+    public function lastHeader()
+    {
+        $headers = $this->headers();
+        $lastHeader = end($headers);
+        return $lastHeader;
     }
 }

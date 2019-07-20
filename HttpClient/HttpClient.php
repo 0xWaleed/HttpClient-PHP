@@ -3,9 +3,11 @@
 namespace HttpClient;
 
 use HttpClient\Core\HttpClientConfiguration;
-use HttpClient\Core\RequestOptions;
+use HttpClient\Core\HttpRequestOptions;
 use HttpClient\Interfaces\HttpDataInterface;
-use HttpClient\Core\Response;
+use HttpClient\Core\HttpResponse;
+use HttpClient\Interfaces\HttpForwardInterface;
+
 /*
  * TODO:
  * EncodeURL
@@ -50,7 +52,7 @@ class HttpClient
         self::$_defaultHeaders['Authorization'] = "{$type} $token";
     }
 
-    private static function setUp($method, $url, ?RequestOptions $requestOptions)
+    private static function setUp($method, $url, ?HttpRequestOptions $requestOptions)
     {
         $responseObj = self::createResponseObject();
         $curl = curl_init();
@@ -122,29 +124,38 @@ class HttpClient
         return $responseObj;
     }
 
-    public static function get($url, RequestOptions $requestOptions = null)
+    public static function get($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('GET', $url, $requestOptions);
     }
 
-    public static function post($url, RequestOptions $requestOptions = null)
+    public static function post($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('POST', $url, $requestOptions);
     }
 
-    public static function put($url, RequestOptions $requestOptions = null)
+    public static function put($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('PUT', $url, $requestOptions);
     }
 
-    public static function delete($url, RequestOptions $requestOptions = null)
+    public static function delete($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('DELETE', $url, $requestOptions);
     }
 
-    public static function patch($url, RequestOptions $requestOptions = null)
+    public static function patch($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('PATCH', $url, $requestOptions);
+    }
+
+    public static function requestFromClass(HttpForwardInterface $httpForward): HttpResponse
+    {
+        $httpOptions = new HttpRequestOptions();
+        $httpOptions->setBody($httpForward->getBody());
+        $httpOptions->setCookies($httpForward->getCookies());
+        $httpOptions->setHeaders($httpForward->getHeaders());
+        return self::setUp($httpForward->getMethod(), $httpForward->getUrl(), $httpOptions);
     }
 
     private static function setFinalUri($url)
@@ -158,13 +169,13 @@ class HttpClient
     }
 
     /**
-     * @return Response
+     * @return HttpResponse
      */
     private static function createResponseObject()
     {
         static $responseObj;
         if (!$responseObj)
-            $responseObj = new Response();
+            $responseObj = new HttpResponse();
         return $responseObj;
     }
 
@@ -181,12 +192,12 @@ class HttpClient
     }
 
 
-    private static function mergeHeadersWithRequestedHeaders(?RequestOptions $requestOptions, array &$allHeaders): void
+    private static function mergeHeadersWithRequestedHeaders(?HttpRequestOptions $requestOptions, array &$allHeaders): void
     {
         $allHeaders = array_merge($allHeaders, $requestOptions->getHeaders());
     }
 
-    private static function assignBodyFromRequestOptions(?RequestOptions $requestOptions, array &$allHeaders, array &$curlOptions): void
+    private static function assignBodyFromRequestOptions(?HttpRequestOptions $requestOptions, array &$allHeaders, array &$curlOptions): void
     {
         $allHeaders['Content-Type'] = $requestOptions->getBody()->contentType();
         $curlOptions[CURLOPT_POSTFIELDS] = $requestOptions->getBody()->body();
@@ -198,12 +209,12 @@ class HttpClient
     }
 
 
-    private static function assignCookiesToCurl(?RequestOptions $requestOptions, array &$curlOptions): void
+    private static function assignCookiesToCurl(?HttpRequestOptions $requestOptions, array &$curlOptions): void
     {
         $curlOptions[CURLOPT_COOKIE] = http_build_query($requestOptions->getCookies(), null, ';');
     }
 
-    private static function assignRequestOptions(?RequestOptions $requestOptions, &$allHeaders, &$curlOptions): void
+    private static function assignRequestOptions(?HttpRequestOptions $requestOptions, &$allHeaders, &$curlOptions): void
     {
         if (is_array($requestOptions->getHeaders()) && !empty($requestOptions->getHeaders()))
         {
