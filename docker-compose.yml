@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  httpClient:
+    image: bisoon/apache
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - 80:80
+    container_name: httpClient-demo
