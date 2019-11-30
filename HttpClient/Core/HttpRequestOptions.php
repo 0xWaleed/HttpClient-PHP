@@ -11,6 +11,7 @@ class HttpRequestOptions
     private $body;
     private $headers = [];
     private $cookies = [];
+    private $args = [];
     private $allowRedirection;
     private $maxRedirection;
 
@@ -102,6 +103,22 @@ class HttpRequestOptions
     {
         $this->maxRedirection = (int)$maxRedirection;
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getArgs(): array
+    {
+        return $this->args;
+    }
+
+    /**
+     * @param array $args
+     */
+    public function setArgs(array $args): void
+    {
+        $this->args = $args;
     }
 
 

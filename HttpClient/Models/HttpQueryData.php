@@ -29,7 +29,7 @@ class HttpQueryData implements HttpDataInterface
 
     public function contentType()
     {
-        return 'x-www-form-urlencoded';
+        return 'application/x-www-form-urlencoded';
     }
 
 }

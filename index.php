@@ -32,38 +32,10 @@ spl_autoload_register(function ($class) use ($allFiles){
 });
 //endregion
 
+$reqOptions = new HttpRequestOptions();
+$reqOptions->setArgs(['limit' => 10, 'offset' => 0]);
+$reqOptions->setBody(new \HttpClient\Models\HttpJsonData(['name' => 'Waleed']));
+$r = HttpClient::get('https://httpbin.org/anything', $reqOptions);
+echo '<pre>';
 
-class MyClassThatCanBeForwarded implements \HttpClient\Interfaces\HttpForwardInterface
-{
-    public function getHeaders(): array
-    {
-        return getallheaders();
-    }
-
-    public function getCookies(): array
-    {
-        return $_COOKIE;
-    }
-
-    public function getUrl(): string
-    {
-        return 'http://httpbin.org/anything';
-    }
-
-    public function getBody(): \HttpClient\Interfaces\HttpDataInterface
-    {
-        return new \HttpClient\Models\HttpPlainText(file_get_contents('php://input'));
-    }
-
-    public function getMethod(): string
-    {
-        return $_SERVER['REQUEST_METHOD'];
-    }
-}
-
-
-$myClass = new MyClassThatCanBeForwarded();
-
-$res = HttpClient::requestFromClass($myClass);
-
-die(($res->body));
+die(print_r($r->body));

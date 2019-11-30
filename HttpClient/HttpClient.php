@@ -61,23 +61,20 @@ class HttpClient
         $allHeaders = [];
         $curlOptions = [];
 
-        if (!empty(self::$_defaultHeaders))
-        {
+        if (!empty(self::$_defaultHeaders)) {
             self::mergeHeadersWithDefaultHeaders($allHeaders);
-
         }
 
-        if (!is_null(self::$_allowRedirection))
-        {
+        if (!is_null(self::$_allowRedirection)) {
             $curlOptions[CURLOPT_FOLLOWLOCATION] = self::$_allowRedirection;
         }
 
-        if ($requestOptions)
-        {
-            self::assignRequestOptions($requestOptions, $allHeaders, $curlOptions);
+        $url = self::setFinalUri($url);
+
+        if ($requestOptions) {
+            self::assignRequestOptions($requestOptions, $allHeaders, $curlOptions, $url);
         }
 
-        $url = self::setFinalUri($url);
 
         self::buildHeadersForCurl($allHeaders, $curlOptions);
 
@@ -114,8 +111,7 @@ class HttpClient
 
         $responseObj->headers = $responseHeaders;
 
-        if (self::$_getRequestInfo)
-        {
+        if (self::$_getRequestInfo) {
             $responseObj->request = curl_getinfo($curl);
         }
 
@@ -168,6 +164,11 @@ class HttpClient
         return $url;
     }
 
+    private static function assignUrlArgs(HttpRequestOptions &$requestOptions, &$url)
+    {
+        $url .= '?'.http_build_query($requestOptions->getArgs());
+    }
+
     /**
      * @return HttpResponse
      */
@@ -183,8 +184,7 @@ class HttpClient
     {
         $allHeadersFinal = [];
 
-        array_walk($allHeaders, function ($v, $k) use (&$allHeadersFinal)
-        {
+        array_walk($allHeaders, function ($v, $k) use (&$allHeadersFinal) {
             $allHeadersFinal[] = "{$k}: {$v}";
         });
 
@@ -214,31 +214,31 @@ class HttpClient
         $curlOptions[CURLOPT_COOKIE] = http_build_query($requestOptions->getCookies(), null, ';');
     }
 
-    private static function assignRequestOptions(?HttpRequestOptions $requestOptions, &$allHeaders, &$curlOptions): void
+    private static function assignRequestOptions(?HttpRequestOptions $requestOptions, &$allHeaders, &$curlOptions, &$url): void
     {
-        if (is_array($requestOptions->getHeaders()) && !empty($requestOptions->getHeaders()))
-        {
+        if (is_array($requestOptions->getHeaders()) && !empty($requestOptions->getHeaders())) {
             self::mergeHeadersWithRequestedHeaders($requestOptions, $allHeaders);
         }
 
-        if (($requestOptions->getBody() instanceof HttpDataInterface))
-        {
+        if (($requestOptions->getBody() instanceof HttpDataInterface)) {
             self::assignBodyFromRequestOptions($requestOptions, $allHeaders, $curlOptions);
         }
 
-        if (!empty($requestOptions->getCookies()))
-        {
+        if (!empty($requestOptions->getCookies())) {
             self::assignCookiesToCurl($requestOptions, $curlOptions);
         }
 
-        if (!is_null($requestOptions->getAllowRedirection()))
-        {
+        if (!is_null($requestOptions->getAllowRedirection())) {
             $curlOptions[CURLOPT_FOLLOWLOCATION] = (bool)$requestOptions->getAllowRedirection();
         }
 
-        if (!is_null($requestOptions->getMaxRedirection()))
-        {
+        if (!is_null($requestOptions->getMaxRedirection())) {
             $curlOptions[CURLOPT_MAXREDIRS] = (int)$requestOptions->getMaxRedirection();
         }
+
+        if (!empty($requestOptions->getArgs())) {
+            self::assignUrlArgs($requestOptions, $url);
+        }
+
     }
 }
