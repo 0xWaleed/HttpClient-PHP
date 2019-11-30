@@ -31,6 +31,8 @@ class HttpClient
     private static $_allowRedirection;
     private static $_maxRedirection;
 
+    public static $beforeRequestDelegate;
+
     private function __construct()
     {
     }
@@ -57,9 +59,16 @@ class HttpClient
         $responseObj = self::createResponseObject();
         $curl = curl_init();
 
+        if (!$requestOptions) {
+            $requestOptions = new HttpRequestOptions();
+        }
 
         $allHeaders = [];
         $curlOptions = [];
+
+        if (is_callable(self::$beforeRequestDelegate)) {
+            call_user_func(self::$beforeRequestDelegate, $requestOptions);
+        }
 
         if (!empty(self::$_defaultHeaders)) {
             self::mergeHeadersWithDefaultHeaders($allHeaders);
@@ -71,9 +80,8 @@ class HttpClient
 
         $url = self::setFinalUri($url);
 
-        if ($requestOptions) {
-            self::assignRequestOptions($requestOptions, $allHeaders, $curlOptions, $url);
-        }
+
+        self::assignRequestOptions($requestOptions, $allHeaders, $curlOptions, $url);
 
 
         self::buildHeadersForCurl($allHeaders, $curlOptions);
@@ -166,7 +174,7 @@ class HttpClient
 
     private static function assignUrlArgs(HttpRequestOptions &$requestOptions, &$url)
     {
-        $url .= '?'.http_build_query($requestOptions->getArgs());
+        $url .= '?' . http_build_query($requestOptions->getArgs());
     }
 
     /**

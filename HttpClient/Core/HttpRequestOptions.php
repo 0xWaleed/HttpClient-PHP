@@ -52,6 +52,17 @@ class HttpRequestOptions
     }
 
     /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function addHeaders(string $name, string $value)
+    {
+        $this->headers[$name] = $value;
+        return $this;
+    }
+
+    /**
      * @return array
      */
     public function getCookies(): array
@@ -66,6 +77,17 @@ class HttpRequestOptions
     public function setCookies(array $cookies): HttpRequestOptions
     {
         $this->cookies = $cookies;
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function addCookie(string $name, string $value)
+    {
+        $this->cookies[$name] = $value;
         return $this;
     }
 
@@ -115,10 +137,23 @@ class HttpRequestOptions
 
     /**
      * @param array $args
+     * @return HttpRequestOptions
      */
-    public function setArgs(array $args): void
+    public function setArgs(array $args): HttpRequestOptions
     {
         $this->args = $args;
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function addArgs(string $name, string $value)
+    {
+        $this->args[$name] = $value;
+        return $this;
     }
 
 
