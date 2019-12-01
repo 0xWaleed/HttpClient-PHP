@@ -20,6 +20,7 @@ Response Support:
 
 * Body
 * Headers
+* Cookies
 
 
 
