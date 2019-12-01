@@ -1,0 +1,11 @@
+{
+    "name": "mine/http-client-php",
+    "description": "Http client for general purposes",
+    "type": "library",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "HttpClient\\": "HttpClient"
+        }
+    }
+}

@@ -7,36 +7,23 @@ use \HttpClient\Models\{
     HttpMultipartCell,
     HttpMultipartData
 };
+require_once 'vendor/autoload.php';
 
-//region AutoLoad
-$files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator('HttpClient'));
-$allFiles = [];
-
-foreach ($files as $file) {
-    if ($file->getFileName()[0] === '.')
-        continue;
-
-    $allFiles[$file->getFileName()] = $file->getPathName();
+function operationId()
+{
+    static $id;
+    if (!$id)
+        $id = bin2hex(openssl_random_pseudo_bytes(24));
+    return $id;
 }
-
-spl_autoload_register(function ($class) use ($allFiles) {
-
-
-    $pathAsArray = explode('\\', $class);
-
-    $fileName = end($pathAsArray) . '.php';
-
-    if (file_exists($allFiles[$fileName]))
-        require_once $allFiles[$fileName];
-
-});
-//endregion
-
 //This gonna work on before all requests
 HttpClient::$onAllRequestDelegate = function (HttpRequestOptions $r, $id) {
     $r->addHeader('Id', $id);
     $r->addArg('Id', $id);
     $r->addCookie('Id', $id);
+    $r->addHeader('Operation-Id', operationId());
+    $r->addArg('Operation-Id', operationId());
+    $r->addCookie('Operation-Id', operationId());
 };
 
 //region This is example of one instance - Playstation
@@ -47,7 +34,9 @@ $httpForSpecificId_playstation->beforeRequestDelegate = function (HttpRequestOpt
     $r->addCookie('npsso', 'dlksdksldkldfhihiihiii-playstation');
 };
 
-$res = $httpForSpecificId_playstation->get('https://httpbin.org/anything');
+$reqOptions = new HttpRequestOptions();
+$reqOptions->setBody(new \HttpClient\Models\HttpJsonData(['name' => 'php']));
+$res = $httpForSpecificId_playstation->get('https://httpbin.org/anything', $reqOptions);
 
 echo '<pre>';
 
