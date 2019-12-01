@@ -32,20 +32,41 @@ spl_autoload_register(function ($class) use ($allFiles) {
 });
 //endregion
 
-HttpClient::$beforeRequestDelegate = function (HttpRequestOptions $r) {
-    $r->addArgs('name', 'js:ds')
-        ->addCookie('sootie', 'bookie')
-        ->addCookie('chooti', 'ooti')
-    ->addHeaders('IamHeader', 'IamValue')
-    ->addArgs('onlyFriends', 16);
-    HttpClient::authorization('bearer', '5678rhjb82t7rgb249');
-
+//This gonna work on before all requests
+HttpClient::$onAllRequestDelegate = function (HttpRequestOptions $r, $id) {
+    $r->addHeader('Id', $id);
+    $r->addArg('Id', $id);
+    $r->addCookie('Id', $id);
 };
 
-$reqOptions = new HttpRequestOptions();
-$reqOptions->setArgs(['limit' => 10, 'offset' => 0]);
-$reqOptions->setBody(new \HttpClient\Models\HttpPlainText('biifff'));
-$r = HttpClient::get('https://httpbin.org/anything', $reqOptions);
+//region This is example of one instance - Playstation
+$httpForSpecificId_playstation = HttpClient::instance('Playstation');
+//This gonna work on before all instance requests
+$httpForSpecificId_playstation->beforeRequestDelegate = function (HttpRequestOptions $r) use ($httpForSpecificId_playstation) {
+    $httpForSpecificId_playstation->authorization('Bearer', 'token-playstation');
+    $r->addCookie('npsso', 'dlksdksldkldfhihiihiii-playstation');
+};
+
+$res = $httpForSpecificId_playstation->get('https://httpbin.org/anything');
+
 echo '<pre>';
 
-die(print_r($r->body, 1));
+print_r($res->body);
+
+//endregion
+
+//region This another instance with another Id - Community
+$httpForSpecificId_Community = HttpClient::instance('Community');
+
+$httpForSpecificId_Community->beforeRequestDelegate = function (HttpRequestOptions $r) use ($httpForSpecificId_Community) {
+    $httpForSpecificId_Community->authorization('Bearer', 'token-community');
+    $r->addCookie('npsso', 'dlksdksldkldfhihiihiii-community');
+};
+
+$res = $httpForSpecificId_Community->get('https://httpbin.org/anything');
+
+echo "\n";
+
+print_r($res->body);
+//endregion
+

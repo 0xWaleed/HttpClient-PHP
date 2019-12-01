@@ -22,39 +22,58 @@ class HttpClient
 {
 
     private const DEFAULT_USER_AGENT = 'HttpClient';
+    private const DEFAULT_INSTANCE_ID = 'DEFAULT';
 
-    private static $_defaultHeaders = [];
-    private static $_baseUri = '';
-    private static $_getRequestInfo;
-    private static $_userAgent;
-    private static $_timeOutInMS;
-    private static $_allowRedirection;
-    private static $_maxRedirection;
+    private $_id;
 
-    public static $beforeRequestDelegate;
+    private $_defaultHeaders = [];
+    private $_baseUri = '';
+    private $_getRequestInfo;
+    private $_userAgent;
+    private $_timeOutInMS;
+    private $_allowRedirection;
+    private $_maxRedirection;
 
-    private function __construct()
+    private static $_instances = [];
+
+    public $beforeRequestDelegate;
+
+    public static $onAllRequestDelegate;
+
+    private function __construct($id)
     {
+        $this->_id = $id;
     }
 
-    public static function config(HttpClientConfiguration $httpClientConfiguration)
+    /**
+     * @param string $id
+     * @return HttpClient
+     */
+    public static function instance($id = self::DEFAULT_INSTANCE_ID)
     {
-        self::$_defaultHeaders = $httpClientConfiguration->defaultHeaders;
-        self::$_baseUri = $httpClientConfiguration->baseUri;
-        self::$_getRequestInfo = (bool)$httpClientConfiguration->requestInfo;
-        self::$_userAgent = $httpClientConfiguration->userAgent;
-        self::$_timeOutInMS = $httpClientConfiguration->timeOutInMS;
-        self::$_allowRedirection = $httpClientConfiguration->allowRedirection;
-        self::$_allowRedirection = $httpClientConfiguration->allowRedirection;
-        self::$_maxRedirection = $httpClientConfiguration->maxRedirect;
+        if (!isset(self::$_instances[$id]))
+            self::$_instances[$id] = new static($id);
+        return self::$_instances[$id];
     }
 
-    public static function authorization($type, $token)
+    public function config(HttpClientConfiguration $httpClientConfiguration)
     {
-        self::$_defaultHeaders['Authorization'] = "{$type} $token";
+        $this->_defaultHeaders = $httpClientConfiguration->defaultHeaders;
+        $this->_baseUri = $httpClientConfiguration->baseUri;
+        $this->_getRequestInfo = (bool)$httpClientConfiguration->requestInfo;
+        $this->_userAgent = $httpClientConfiguration->userAgent;
+        $this->_timeOutInMS = $httpClientConfiguration->timeOutInMS;
+        $this->_allowRedirection = $httpClientConfiguration->allowRedirection;
+        $this->_allowRedirection = $httpClientConfiguration->allowRedirection;
+        $this->_maxRedirection = $httpClientConfiguration->maxRedirect;
     }
 
-    private static function setUp($method, $url, ?HttpRequestOptions $requestOptions)
+    public function authorization($type, $token)
+    {
+        $this->_defaultHeaders['Authorization'] = "{$type} $token";
+    }
+
+    private function setUp($method, $url, ?HttpRequestOptions $requestOptions)
     {
         $responseObj = self::createResponseObject();
         $curl = curl_init();
@@ -66,16 +85,20 @@ class HttpClient
         $allHeaders = [];
         $curlOptions = [];
 
-        if (is_callable(self::$beforeRequestDelegate)) {
-            call_user_func(self::$beforeRequestDelegate, $requestOptions);
+        if (is_callable(self::$onAllRequestDelegate)) {
+            call_user_func(self::$onAllRequestDelegate, $requestOptions, $this->_id);
         }
 
-        if (!empty(self::$_defaultHeaders)) {
+        if (is_callable($this->beforeRequestDelegate)) {
+            call_user_func($this->beforeRequestDelegate, $requestOptions);
+        }
+
+        if (!empty($this->_defaultHeaders)) {
             self::mergeHeadersWithDefaultHeaders($allHeaders);
         }
 
-        if (!is_null(self::$_allowRedirection)) {
-            $curlOptions[CURLOPT_FOLLOWLOCATION] = self::$_allowRedirection;
+        if (!is_null($this->_allowRedirection)) {
+            $curlOptions[CURLOPT_FOLLOWLOCATION] = $this->_allowRedirection;
         }
 
         $url = self::setFinalUri($url);
@@ -100,10 +123,10 @@ class HttpClient
 
         $curlOptions[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS | CURLPROTO_HTTP;
 
-        if (($timeOut = self::$_timeOutInMS))
+        if (($timeOut = $this->_timeOutInMS))
             $curlOptions[CURLOPT_TIMEOUT_MS] = $timeOut;
 
-        $curlOptions[CURLOPT_USERAGENT] = ($userAgent = self::$_userAgent) ? $userAgent : self::DEFAULT_USER_AGENT;
+        $curlOptions[CURLOPT_USERAGENT] = ($userAgent = $this->_userAgent) ? $userAgent : self::DEFAULT_USER_AGENT;
 
         curl_setopt_array($curl, $curlOptions);
 
@@ -119,7 +142,7 @@ class HttpClient
 
         $responseObj->headers = $responseHeaders;
 
-        if (self::$_getRequestInfo) {
+        if ($this->_getRequestInfo) {
             $responseObj->request = curl_getinfo($curl);
         }
 
@@ -128,32 +151,32 @@ class HttpClient
         return $responseObj;
     }
 
-    public static function get($url, HttpRequestOptions $requestOptions = null)
+    public function get($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('GET', $url, $requestOptions);
     }
 
-    public static function post($url, HttpRequestOptions $requestOptions = null)
+    public function post($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('POST', $url, $requestOptions);
     }
 
-    public static function put($url, HttpRequestOptions $requestOptions = null)
+    public function put($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('PUT', $url, $requestOptions);
     }
 
-    public static function delete($url, HttpRequestOptions $requestOptions = null)
+    public function delete($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('DELETE', $url, $requestOptions);
     }
 
-    public static function patch($url, HttpRequestOptions $requestOptions = null)
+    public function patch($url, HttpRequestOptions $requestOptions = null)
     {
         return self::setUp('PATCH', $url, $requestOptions);
     }
 
-    public static function requestFromClass(HttpForwardInterface $httpForward): HttpResponse
+    public function requestFromClass(HttpForwardInterface $httpForward): HttpResponse
     {
         $httpOptions = new HttpRequestOptions();
         $httpOptions->setBody($httpForward->getBody());
@@ -162,12 +185,12 @@ class HttpClient
         return self::setUp($httpForward->getMethod(), $httpForward->getUrl(), $httpOptions);
     }
 
-    private static function setFinalUri($url)
+    private function setFinalUri($url)
     {
         $parsedUrl = parse_url($url);
 
         if (!isset($parsedUrl['scheme']))
-            $url = self::$_baseUri . $url;
+            $url = $this->_baseUri . $url;
 
         return $url;
     }
@@ -211,9 +234,9 @@ class HttpClient
         $curlOptions[CURLOPT_POSTFIELDS] = $requestOptions->getBody()->body();
     }
 
-    private static function mergeHeadersWithDefaultHeaders(array &$allHeaders): void
+    private function mergeHeadersWithDefaultHeaders(array &$allHeaders): void
     {
-        $allHeaders = array_merge($allHeaders, self::$_defaultHeaders);
+        $allHeaders = array_merge($allHeaders, $this->_defaultHeaders);
     }
 
 

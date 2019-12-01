@@ -56,7 +56,7 @@ class HttpRequestOptions
      * @param string $value
      * @return $this
      */
-    public function addHeaders(string $name, string $value)
+    public function addHeader(string $name, string $value)
     {
         $this->headers[$name] = $value;
         return $this;
@@ -150,7 +150,7 @@ class HttpRequestOptions
      * @param string $value
      * @return $this
      */
-    public function addArgs(string $name, string $value)
+    public function addArg(string $name, string $value)
     {
         $this->args[$name] = $value;
         return $this;
