@@ -3,6 +3,7 @@
     "description": "Http client for general purposes",
     "type": "library",
     "require": {},
+    "version": "1.0",
     "autoload": {
         "psr-4": {
             "HttpClient\\": "HttpClient"
